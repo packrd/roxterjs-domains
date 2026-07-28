@@ -11,21 +11,21 @@ const PageDomainNotFound = async () => {
     const Component = NotFoundModule.default || NotFoundModule;
     return <Component />;
   } catch {
-    return <>Page Not Found</>;
+    return <main id="page-not-found">Page Not Found</main>;
   }
 };
 
 const ImportModuleApp = async () => {
   try {
-    const appModule = await import("@/roxterjs-domain/main");
+    const appModule = await import("@/roxterjs-domains");
     return appModule.default || appModule;
   } catch (Err) {
-    console.log("PMD Import module app error:", Err);
+    console.log("RoxterJs error:", Err);
     return null;
   }
 };
 
-export default async function NextJsDomain(data) {
+export default async function RoxterJs(data) {
   try {
     const serverHeaders = await headers();
     const App = await ImportModuleApp();
@@ -42,11 +42,6 @@ export default async function NextJsDomain(data) {
       .replace(/^www\./, "")
       .toLowerCase();
 
-    const ComponentRender =
-      pageName && App?.[host]?.pages?.[pageName]
-        ? App[host].pages[pageName]
-        : (App?.[host]?.pages?.error ?? (await PageDomainNotFound()));
-
     const properties = {
       pageName,
       ...props,
@@ -56,11 +51,17 @@ export default async function NextJsDomain(data) {
       pmd: App,
     };
 
-    if (pageName) return <ComponentRender {...properties} />;
+    if (!pageName) return properties;
 
-    return properties;
+    const Page = App?.[host]?.pages?.[pageName];
+    if (Page) return <Page {...properties} />;
+
+    const ErrorPage = App?.[host]?.pages?.error;
+    if (ErrorPage) return <ErrorPage {...properties} />;
+
+    return await PageDomainNotFound();
   } catch (Err) {
-    console.log("Nextjs Domain Server error: ", Err);
+    console.log("RoxterJs Server error: ", Err);
     return null;
   }
 }

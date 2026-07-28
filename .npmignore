@@ -1,0 +1,4 @@
+.gitignore
+.npmrc
+npm_recovery*
+node_modules

@@ -1,5 +1,4 @@
-pmd/
-.npmignore
-_index.js
+.gitignore
 .npmrc
 npm_recovery*
+node_modules

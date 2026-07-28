@@ -5,33 +5,57 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ROXTER_DOMAIN_PATH = "src/roxterjs-domain";
-const ROXTER_DOMAIN_PATH_ROOT = "@/roxterjs-domain";
-
-/**
- * Diretório do projeto que está instalando o pacote (não o diretório do
- * próprio pacote dentro de node_modules). O npm expõe isso via INIT_CWD.
- * Fallback para process.cwd() cobre execuções manuais/debug do script.
- */
 const projectRoot = process.env.INIT_CWD || process.cwd();
 
-/**
- * Evita rodar o scaffold quando o próprio repositório do pacote está sendo
- * instalado/desenvolvido (ex: `npm install` dentro do repo do
- * roxterjs-domain, ou `npm link`). Só executa quando o script está mesmo
- * dentro de um node_modules — ou seja, instalado como dependência de outro
- * projeto.
- */
+const hasSrcDir = fs.existsSync(path.join(projectRoot, "src"));
+const ROXTER_DOMAIN_PATH = hasSrcDir
+  ? "src/roxterjs-domains"
+  : "roxterjs-domains";
+
+const ROXTER_DOMAIN_PATH_ROOT = "@/roxterjs-domains";
+const ROOT_SRC = hasSrcDir ? "src/helpers" : "helpers";
+
+function warnIfAliasMissing() {
+  const configPath = ["jsconfig.json", "tsconfig.json"]
+    .map((file) => path.join(projectRoot, file))
+    .find((p) => fs.existsSync(p));
+
+  const expectedTarget = hasSrcDir ? "./src/*" : "./*";
+
+  if (!configPath) {
+    console.log(
+      `⚠ RoxterJs Domains: não encontrei jsconfig.json nem tsconfig.json na raiz do projeto.\n` +
+        `  Crie um jsconfig.json com:\n` +
+        `  { "compilerOptions": { "paths": { "@/*": ["${expectedTarget}"] } } }`,
+    );
+    return;
+  }
+
+  try {
+    const raw = fs.readFileSync(configPath, "utf8");
+    const parsed = JSON.parse(raw);
+    const paths = parsed?.compilerOptions?.paths?.["@/*"];
+    const hasCorrectAlias =
+      Array.isArray(paths) && paths.includes(expectedTarget);
+
+    if (!hasCorrectAlias) {
+      console.log(
+        `⚠ RoxterJs Domains: o alias "@/*" em ${path.basename(configPath)} ` +
+          `não aponta para "${expectedTarget}" (o esperado para este projeto).\n` +
+          `  Ajuste compilerOptions.paths para:\n` +
+          `  { "@/*": ["${expectedTarget}"] }\n` +
+          `  Sem isso, "@/roxterjs-domains/index" não será encontrado em runtime.`,
+      );
+    }
+  } catch {
+    // só deixamos de validar silenciosamente.
+  }
+}
+
 const isInstalledAsDependency = __dirname
   .split(path.sep)
   .includes("node_modules");
 
-/**
- * Sinaliza ambiente de CI/build/deploy (Vercel, Netlify, GitHub Actions,
- * GitLab CI, Railway, Render, etc.). Nesses casos, o npm install roda como
- * parte do pipeline de produção/build, e o pacote deve apenas ser lido —
- * nunca escrever no filesystem.
- */
 const isCiOrDeployEnvironment = Boolean(
   process.env.CI ||
   process.env.VERCEL ||
@@ -63,20 +87,33 @@ const createFile = (relativePath, template) => {
   }
 };
 
+const copyFile = (sourceRelativePath, destinationRelativePath) => {
+  const sourcePath = path.join(__dirname, sourceRelativePath);
+  const destinationPath = path.join(projectRoot, destinationRelativePath);
+
+  if (!fs.existsSync(destinationPath)) {
+    fs.copyFileSync(sourcePath, destinationPath);
+    console.log(`✓ File copied: ${destinationRelativePath}`);
+  }
+};
+
 function scaffold() {
-  if (!fs.existsSync(`${ROXTER_DOMAIN_PATH}/main.js`)) {
+  if (!fs.existsSync(`${ROXTER_DOMAIN_PATH}/index.js`)) {
     createFolder(`${ROXTER_DOMAIN_PATH}/example.com/pages`);
+
+    createFolder(`${ROOT_SRC}`);
+    copyFile("index.js", `${ROOT_SRC}/roxterjs.js`);
 
     createFile(
       `${ROXTER_DOMAIN_PATH}/example.com/metadata.js`,
       `export default {
-      title: { template: "%s | RoxterJs Domain", default: "Example.com - RoxterJs Domain" },
-      description: "Project RoxterJs Domain",
-      keywords: ["roxterjs domain"],
-      icons: {},
-      robots: "index, follow",
-      openGraph: {},
-    };
+  title: { template: "%s | RoxterJs Domains", default: "Example.com - RoxterJs Domains" },
+  description: "Project RoxterJs Domains",
+  keywords: ["roxterjs domains"],
+  icons: {},
+  robots: "index, follow",
+  openGraph: {},
+};
     `,
     );
 
@@ -84,39 +121,39 @@ function scaffold() {
       `${ROXTER_DOMAIN_PATH}/example.com/pages/home.js`,
       `import React from "react";
     
-    export default function HomeExampleCom() {
-      return <>Hello World, page Example.com</>;
-    }
+  export default function PageHomeExampleCom() {
+    return <>Hello RoxterJs Domains, page Example.com</>;
+  }
     `,
     );
 
     createFile(
       `${ROXTER_DOMAIN_PATH}/example.com/index.js`,
-      `import HomeExampleCom from "./pages/home";
-    import MetadataExample from "./metadata";
-    
-    export default {
-      metadata: MetadataExample,
-      pages: {
-        home: HomeExampleCom,
-      },
-      components: {},
-    };
+      `import PageHomeExampleCom from "./pages/home";
+import MetadataExampleCom from "./metadata";
+
+export default {
+  metadata: MetadataExampleCom,
+  pages: {
+    home: PageHomeExampleCom,
+  },
+  components: {},
+};
     `,
     );
   }
 
   createFile(
-    `${ROXTER_DOMAIN_PATH}/main.js`,
-    `import DomainExampleCom from "${ROXTER_DOMAIN_PATH_ROOT}/example.com";
+    `${ROXTER_DOMAIN_PATH}/index.js`,
+    `import ExampleCom from "${ROXTER_DOMAIN_PATH_ROOT}/example.com";
 
 export default {
-  "example.com": DomainExampleCom,
+  "example.com": ExampleCom,
 };
 `,
   );
 
-  console.log("✓ RoxterJs Domain: scaffold concluído em", projectRoot);
+  console.log("✓ RoxterJs Domains: scaffold concluído em", projectRoot);
 }
 
 function main() {
@@ -127,7 +164,7 @@ function main() {
 
   if (isScaffoldDisabledByUser) {
     console.log(
-      "RoxterJs Domain: scaffold desabilitado via ROXTER_DOMAIN_SKIP_SCAFFOLD.",
+      "RoxterJs Domains: scaffold desabilitado via ROXTER_DOMAIN_SKIP_SCAFFOLD.",
     );
     return;
   }
@@ -139,9 +176,10 @@ function main() {
 
   try {
     scaffold();
+    warnIfAliasMissing();
   } catch (err) {
     // Nunca deixa uma falha de scaffold quebrar o `npm install` do usuário
-    console.log("RoxterJs Domain: erro ao criar arquivos de exemplo:", err);
+    console.log("RoxterJs Domains: erro ao criar arquivos de exemplo:", err);
   }
 }
 
