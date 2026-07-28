@@ -1,6 +1,6 @@
 {
   "name": "@packrd/roxterjs-domains",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Framework para gerenciar múltiplos domínios em projetos Next.js com estrutura automática de pastas e páginas.",
   "type": "module",
   "main": "./src/index.js",
