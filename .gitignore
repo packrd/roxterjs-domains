@@ -1,3 +1,5 @@
 pmd/
 .npmignore
 _index.js
+.npmrc
+npm_recovery*
