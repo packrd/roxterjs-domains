@@ -171,9 +171,9 @@ export default {
 
 ---
 
-## 🎨 Layout compartilhado (header, footer e metadados)
+## 🎨 Layout compartilhado (metadados)
 
-No `app/layout.js`, você define a estrutura que envolve todas as páginas — mas cada domínio pode ter seu próprio header, footer e metadados de SEO:
+No `app/layout.js`, você define a estrutura que envolve todas as páginas — mas cada domínio pode ter seu próprio metadados de SEO:
 
 ```jsx
 // app/layout.js
@@ -185,20 +185,9 @@ export async function generateMetadata() {
 }
 
 export default async function RootLayout({ children }) {
-  const domain = await RoxterJs();
-
-  const header = domain.pmd[domain.host]?.components?.header;
-  const footer = domain.pmd[domain.host]?.components?.footer;
-
   return (
     <html lang="en">
-      <body>
-        {header && <header>{header}</header>}
-
-        {children}
-
-        {footer && <footer>{footer}</footer>}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
@@ -208,7 +197,6 @@ Com isso, automaticamente cada domínio passa a ter:
 
 - ✅ Suas próprias páginas
 - ✅ Seus próprios metadados/SEO
-- ✅ Seu próprio header e footer (se definidos)
 - ✅ Componentes compartilhados do restante do projeto
 
 ---
@@ -299,9 +287,6 @@ Agora qualquer alteração feita no pacote será refletida no projeto que o cons
 
 **Um domínio pode ter páginas que outros não têm?**
 Sim. As páginas são definidas individualmente dentro de `pages: {}` de cada domínio — não há obrigatoriedade de todos terem as mesmas rotas.
-
-**Preciso criar um `layout.js` diferente para cada domínio?**
-Não. O mesmo `app/layout.js` serve para todos; ele apenas busca dinamicamente o header, footer e metadados corretos com base no domínio acessado.
 
 **O que acontece se eu esquecer de registrar um domínio no `index.js`?**
 O framework não conseguirá localizá-lo, mesmo que a pasta exista fisicamente no projeto.
