@@ -1,9 +1,12 @@
 {
   "name": "@packrd/roxterjs-domains",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Framework para gerenciar múltiplos domínios em projetos Next.js com estrutura automática de pastas e páginas.",
   "type": "module",
   "main": "./src/index.js",
+  "scripts": {
+    "postinstall": "node ./src/postinstall.js"
+  },
   "exports": {
     "./package.json": "./package.json"
   },
@@ -35,9 +38,6 @@
     "url": "https://github.com/packrd/roxterjs-domains/issues"
   },
   "homepage": "https://github.com/packrd/roxterjs-domains#readme",
-  "scripts": {
-    "postinstall": "node ./src/postinstall.js"
-  },
   "peerDependencies": {
     "next": ">=14.0.0",
     "react": ">=18.0.0"

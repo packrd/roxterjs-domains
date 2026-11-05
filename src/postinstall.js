@@ -2,18 +2,16 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
+const projectRoot = process.env.INIT_CWD || process.cwd();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const projectRoot = process.env.INIT_CWD || process.cwd();
-
 const hasSrcDir = fs.existsSync(path.join(projectRoot, "src"));
-const ROXTER_DOMAIN_PATH = hasSrcDir
-  ? "src/roxterjs-domains"
-  : "roxterjs-domains";
-
-const ROXTER_DOMAIN_PATH_ROOT = "@/roxterjs-domains";
 const ROOT_SRC = hasSrcDir ? "src/helpers" : "helpers";
+
+const ROXTER_DOMAIN_PATH = hasSrcDir ? "src/domains" : "domains";
+const ROXTER_DOMAIN_PATH_ROOT = "@/domains";
+const ROXTER_NEXT_DOMAINS = "next-domains.js";
 
 function warnIfAliasMissing() {
   const configPath = ["jsconfig.json", "tsconfig.json"]
@@ -44,7 +42,7 @@ function warnIfAliasMissing() {
           `não aponta para "${expectedTarget}" (o esperado para este projeto).\n` +
           `  Ajuste compilerOptions.paths para:\n` +
           `  { "@/*": ["${expectedTarget}"] }\n` +
-          `  Sem isso, "@/roxterjs-domains/index" não será encontrado em runtime.`,
+          `  Sem isso, "@/domains/index" não será encontrado em runtime.`,
       );
     }
   } catch {
@@ -79,9 +77,9 @@ const createFolder = (relativePath) => {
   }
 };
 
-const createFile = (relativePath, template) => {
+export const createFile = (relativePath, template, subscribe = false) => {
   const fullPath = path.join(projectRoot, relativePath);
-  if (!fs.existsSync(fullPath)) {
+  if (!fs.existsSync(fullPath) || subscribe) {
     fs.writeFileSync(fullPath, template);
     console.log(`✓ File created: ${relativePath}`);
   }
@@ -136,15 +134,14 @@ export default {
   metadata: MetadataExampleCom,
   pages: {
     home: PageHomeExampleCom,
-  },
-  components: {},
+  }
 };
     `,
     );
   }
 
   createFile(
-    `${ROXTER_DOMAIN_PATH}/index.js`,
+    `${ROXTER_NEXT_DOMAINS}`,
     `import ExampleCom from "${ROXTER_DOMAIN_PATH_ROOT}/example.com";
 
 export default {
@@ -157,22 +154,22 @@ export default {
 }
 
 function main() {
-  if (!isInstalledAsDependency) {
+  /*  if (!isInstalledAsDependency) {
     // rodando dentro do próprio repo do pacote — não faz nada
-    return;
+    //return;
   }
 
   if (isScaffoldDisabledByUser) {
     console.log(
       "RoxterJs Domains: scaffold desabilitado via ROXTER_DOMAIN_SKIP_SCAFFOLD.",
     );
-    return;
+    //return;
   }
 
   if (isCiOrDeployEnvironment) {
     // build/deploy: apenas leitura, nunca escreve no filesystem
-    return;
-  }
+    //return;
+  } */
 
   try {
     scaffold();
